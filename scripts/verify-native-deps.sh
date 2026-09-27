@@ -164,7 +164,7 @@ done
 # Xcode build fails loudly instead. The check is content-based (not
 # mtime), so prebuilt tarballs still verify on fresh clones.
 FINGERPRINT_FILE="$LIB/.mkxp-binding-fingerprint"
-FINGERPRINT_SCRIPT="$REPO_ROOT/mkxp-z-apple-mobile/tools/binding-fingerprint.sh"
+FINGERPRINT_SCRIPT="${ENGINE:-$REPO_ROOT/mkxp-z-apple-mobile}/tools/binding-fingerprint.sh"
 # The script lives in the submodule. A clone that never fetched the
 # submodule, or a gitlink older than the move into the engine repo,
 # failed here with a bare "No such file or directory". Say what to do.
@@ -244,7 +244,7 @@ require_file_min "$CORE_LIB" 1000000 "libmkxpz-core.a"
 require_platform "$CORE_LIB" "$EXPECTED_PLATFORM" "libmkxpz-core.a"
 
 CORE_FP_FILE="$LIB/.mkxp-core-fingerprint"
-CORE_FP_SCRIPT="$REPO_ROOT/mkxp-z-apple-mobile/tools/core-fingerprint.sh"
+CORE_FP_SCRIPT="${ENGINE:-$REPO_ROOT/mkxp-z-apple-mobile}/tools/core-fingerprint.sh"
 if [[ -f "$CORE_FP_FILE" ]]; then
     recorded="$(cat "$CORE_FP_FILE")"
     current="$("$CORE_FP_SCRIPT")"
