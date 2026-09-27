@@ -12,9 +12,10 @@
 // and every eglSwapBuffers succeeds, but the display stays black.
 // Empo has a real window already, so this only matters for the test.
 //
-// The host does not link the core. It opens
-// Frameworks/PsdkCore.framework/PsdkCore with dlopen when the game
-// starts, and reads the Ruby support folder from the same bundle. Empo
+// The host does not link a core. It opens
+// Frameworks/Psdk30Core.framework/Psdk30Core, or the core that PSDK_RUBY
+// names, with dlopen when the game starts, and reads the Ruby support
+// folder from the same bundle. Empo
 // does the same on the game the user picks, so the test host and the
 // launcher take one path.
 //
@@ -211,8 +212,14 @@ static void scheduleRotation(const char *spec) {
     }
     gGamePath = strdup(game.fileSystemRepresentation);
 
+    // PSDK_RUBY picks the core, as the app does from the version in
+    // Game.yarb.
+    const char *wantRuby = getenv("PSDK_RUBY");
+    NSString *name = [NSString stringWithFormat:@"Psdk%@Core",
+        [@((wantRuby && *wantRuby) ? wantRuby : "3.0") stringByReplacingOccurrencesOfString:@"."
+                                                                                withString:@""]];
     NSString *core = [NSBundle.mainBundle.privateFrameworksPath
-        stringByAppendingPathComponent:@"PsdkCore.framework"];
+        stringByAppendingPathComponent:[name stringByAppendingPathExtension:@"framework"]];
     NSString *support = [core stringByAppendingPathComponent:@"PsdkSupport"];
     if (![NSFileManager.defaultManager fileExistsAtPath:support]) {
         fprintf(stderr, "[host] no support folder at %s\n", support.UTF8String);
@@ -220,7 +227,7 @@ static void scheduleRotation(const char *spec) {
     }
     gSupportPath = strdup(support.fileSystemRepresentation);
 
-    void *image = dlopen([core stringByAppendingPathComponent:@"PsdkCore"]
+    void *image = dlopen([core stringByAppendingPathComponent:name]
                              .fileSystemRepresentation,
                          RTLD_NOW | RTLD_LOCAL);
     if (!image) {
