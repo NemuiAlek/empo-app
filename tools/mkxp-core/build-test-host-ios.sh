@@ -4,7 +4,7 @@
 #
 # There is no Xcode project. An iOS app bundle is a directory with a
 # Mach-O binary, an Info.plist and resources, so this script assembles
-# one by hand. The same shape as tools/psdk-core/build-test-host-ios.sh.
+# one by hand.
 #
 # Usage:
 #   tools/mkxp-core/build-test-host-ios.sh [--out <dir>]
@@ -74,6 +74,7 @@ cp -R "$TREE/MkxpCore.framework" "$APP/Frameworks/"
 
 # Psdk30Core rides along when it is built, so MKXP_ALSO_OPEN can prove two
 # cores load in one process. The host never links it.
+# tools/psdk-core/build-framework-ios.sh builds it.
 if [ -d "$TREE/Psdk30Core.framework" ]; then
     cp -R "$TREE/Psdk30Core.framework" "$APP/Frameworks/"
 fi
