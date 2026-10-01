@@ -33,6 +33,12 @@ public enum RubyScriptGrammarSniffer {
         /// (`.rvdata2`).
         case legacy
 
+        /// Legacy grammar that also calls Ruby 1.9+ methods, such as
+        /// `force_encoding`. Ruby 1.8 lacks the methods, and plain
+        /// Ruby 3.1 rejects the grammar, so only Ruby 3.1 with the
+        /// legacy syntax transform runs it (Vinemon Sauce Edition).
+        case mixed
+
         /// The sniffer could not read the live source. Causes: an
         /// encrypted archive with no unpack, a missing file, a
         /// parse error, an unknown Marshal tag, or scripts packed
@@ -287,7 +293,198 @@ public enum RubyScriptGrammarSniffer {
             hits += regex.numberOfMatches(in: source, options: [], range: range)
             if hits >= modernThreshold { return .modern }
         }
-        return .legacy
+        return callsRuby19Methods(source) ? .mixed : .legacy
+    }
+
+    private static let ruby19Call = try? NSRegularExpression(
+        pattern: #"\.force_encoding\b|\bEncoding::[A-Z]"#)
+
+    /// Only an `if` or `elsif` that checks for 1.9 directly. A negated
+    /// check, `unless`, `else`, or an `||` / `or` in the condition runs
+    /// its body on 1.8. Group 1 is the receiver of `respond_to?`.
+    private static let ruby19Guard = try? NSRegularExpression(
+        pattern: #"\b(?:if|elsif)\s+\(?\s*(?:(?:([@$]?[\w.]+)\.)?respond_to\?[\s(]*:force_encoding\b|defined\?[\s(]*Encoding\b)(?![^#;]*(?:\|\||\bor\b))"#)
+
+    private static let heredocStart = try? NSRegularExpression(
+        pattern: #"<<([-~]?)(["'`]?)([A-Za-z_]\w*)\2"#)
+
+    /// What a guard makes safe: every 1.9 call after `defined?(Encoding)`,
+    /// or only `force_encoding` on the receiver that `respond_to?` checked.
+    private enum Cover: Equatable {
+        case all
+        case receiver(String)
+    }
+
+    /// Scripts written for both 1.8 and 1.9 check for the method first,
+    /// in a postfix `if` on the same statement or in an `if` block, so
+    /// those calls do not count.
+    private static func callsRuby19Methods(_ source: String) -> Bool {
+        guard let ruby19Call, let ruby19Guard, let heredocStart else { return false }
+        func covered(_ call: NSRange, in units: [Character], by covers: [Cover]) -> Bool {
+            if covers.contains(.all) { return true }
+            guard units[call.location] == "." else { return false }
+            var start = call.location
+            while start > 0, units[start - 1].isLetter || units[start - 1].isNumber
+                || "_.@$".contains(units[start - 1]) {
+                start -= 1
+            }
+            let receiver = String(units[start..<call.location])
+            return covers.contains(.receiver(receiver.isEmpty ? "self" : receiver))
+        }
+        var inBlockComment = false
+        var heredoc: (end: String, indented: Bool, interpolates: Bool)?
+        var blocks: [(indent: Int, cover: Cover)] = []
+        for line in source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let indent = line.prefix { $0 == " " || $0 == "\t" }.count
+            let units = line.utf16.map { Character(Unicode.Scalar($0) ?? "\u{FFFD}") }
+            let range = NSRange(line.startIndex..., in: line)
+            if let open = heredoc {
+                if (open.indented ? trimmed : line) == open.end {
+                    heredoc = nil
+                } else if open.interpolates {
+                    let code = codeMask(units, inString: true)
+                    let calls = ruby19Call.matches(in: line, range: range).filter { code[$0.range.location] }
+                    if calls.contains(where: { !covered($0.range, in: units, by: blocks.map(\.cover)) }) {
+                        return true
+                    }
+                }
+                continue
+            }
+            if line.hasPrefix("=begin") { inBlockComment = true }
+            if line.hasPrefix("=end") { inBlockComment = false }
+            if inBlockComment { continue }
+            let code = codeMask(units)
+            func codeMatches(_ regex: NSRegularExpression) -> [NSTextCheckingResult] {
+                regex.matches(in: line, range: range).filter { code[$0.range.location] }
+            }
+            if let match = codeMatches(heredocStart).first {
+                func group(_ number: Int) -> Substring {
+                    Range(match.range(at: number), in: line).map { line[$0] } ?? ""
+                }
+                heredoc = (String(group(3)), !group(1).isEmpty, group(2) != "'")
+            }
+            func closes(_ text: String) -> Bool {
+                ["end", "else", "elsif"].contains { text.hasPrefix($0) }
+            }
+            if let last = blocks.last, indent == last.indent && closes(trimmed) {
+                blocks.removeLast()
+            }
+            let guards = codeMatches(ruby19Guard)
+            let calls = codeMatches(ruby19Call)
+            var inline: [Cover] = []
+            var start = 0
+            let ends = units.indices.filter { units[$0] == ";" && code[$0] } + [units.count]
+            for (number, end) in ends.enumerated() {
+                defer { start = end + 1 }
+                let text = String(units[start..<end]).trimmingCharacters(in: .whitespaces)
+                if !inline.isEmpty && closes(text) { inline.removeAll() }
+                let own = guards.filter { (start..<end).contains($0.range.location) }.map { match in
+                    Range(match.range(at: 1), in: line).map { Cover.receiver(String(line[$0])) }
+                        ?? (line[Range(match.range, in: line)!].contains("respond_to") ? .receiver("self") : .all)
+                }
+                let covers = blocks.map(\.cover) + inline + own
+                let open = calls.filter { (start..<end).contains($0.range.location) }
+                if open.contains(where: { !covered($0.range, in: units, by: covers) }) { return true }
+                let opensBlock = text.hasPrefix("if ") || text.hasPrefix("elsif ")
+                guard opensBlock && !text.hasSuffix("end"), !own.isEmpty else { continue }
+                if number == ends.count - 1 {
+                    blocks += own.map { (indent, $0) }
+                } else {
+                    inline += own
+                }
+            }
+        }
+        return false
+    }
+
+    private enum Scope {
+        case literal(open: Character?, close: Character, interpolates: Bool, depth: Int)
+        case insert(braces: Int)
+    }
+
+    /// For each UTF-16 unit of a line, true when it sits outside a comment
+    /// and outside the plain part of a string literal. Code inside a
+    /// `#{...}` insert counts. `inString` starts inside a heredoc body.
+    private static func codeMask(_ chars: [Character], inString: Bool = false) -> [Bool] {
+        var stack: [Scope] = inString
+            ? [.literal(open: nil, close: "\n", interpolates: true, depth: 0)] : []
+        var mask = [Bool](repeating: false, count: chars.count + 1)
+        var index = 0
+        func isCode() -> Bool {
+            if case .literal? = stack.last { return false }
+            return true
+        }
+        while index < chars.count {
+            mask[index] = isCode()
+            let char = chars[index]
+            let next = index + 1 < chars.count ? chars[index + 1] : nil
+            index += 1
+            if case .literal(let open, let close, let interpolates, let depth)? = stack.last {
+                if char == "\\" {
+                    index += 1
+                } else if char == open {
+                    stack[stack.count - 1] = .literal(
+                        open: open, close: close, interpolates: interpolates, depth: depth + 1)
+                } else if char == close && depth > 0 {
+                    stack[stack.count - 1] = .literal(
+                        open: open, close: close, interpolates: interpolates, depth: depth - 1)
+                } else if char == close {
+                    stack.removeLast()
+                } else if interpolates && char == "#" && next == "{" {
+                    stack.append(.insert(braces: 0))
+                    index += 1
+                }
+                continue
+            }
+            switch char {
+            case "\"":
+                stack.append(.literal(open: nil, close: "\"", interpolates: true, depth: 0))
+            case "'":
+                stack.append(.literal(open: nil, close: "'", interpolates: false, depth: 0))
+            case "%":
+                if let literal = percentLiteral(chars, at: &index) { stack.append(literal) }
+            case "#":
+                return mask
+            case "{":
+                if case .insert(let braces)? = stack.last {
+                    stack[stack.count - 1] = .insert(braces: braces + 1)
+                }
+            case "}":
+                if case .insert(let braces)? = stack.last {
+                    if braces == 0 {
+                        stack.removeLast()
+                    } else {
+                        stack[stack.count - 1] = .insert(braces: braces - 1)
+                    }
+                }
+            default:
+                break
+            }
+        }
+        mask[chars.count] = isCode()
+        return mask
+    }
+
+    /// Reads a `%q(...)`-style literal start after the `%`. A `%` with
+    /// a space or a letter after it is the modulo operator.
+    private static func percentLiteral(_ chars: [Character], at index: inout Int) -> Scope? {
+        var cursor = index
+        var kind: Character?
+        if cursor < chars.count, "qQwWiIrsx".contains(chars[cursor]) {
+            kind = chars[cursor]
+            cursor += 1
+        }
+        guard cursor < chars.count else { return nil }
+        let delimiter = chars[cursor]
+        guard !delimiter.isLetter, !delimiter.isNumber, !delimiter.isWhitespace else { return nil }
+        let pairs: [Character: Character] = ["(": ")", "[": "]", "{": "}", "<": ">"]
+        index = cursor + 1
+        return .literal(
+            open: pairs[delimiter] == nil ? nil : delimiter,
+            close: pairs[delimiter] ?? delimiter,
+            interpolates: !"qwis".contains(kind ?? "Q"),
+            depth: 0)
     }
 }
 
