@@ -13,6 +13,7 @@ struct PlayerView: View {
     /// PlayerEditToolbar).
     @AppStorage(DefaultsKey.controlsEditSnapToGrid) private var snapToGrid = false
     @State private var controlsHidden = false
+    @Environment(\.displayScale) private var displayScale
     @State private var keyboardMode = false
     @State private var showDebugOverlay = false
     /// Long-lived state for the debug overlay. It lives on `PlayerView`
@@ -74,7 +75,27 @@ struct PlayerView: View {
                 btnSize: toolbarBtnSize,
                 geoHeight: geo.size.height, forcedOverlay: forcedOverlay)
 
+            let skinProfile = ScreenRegionApplier.activeProfileName()
+            let skinArt = skinProfile.flatMap {
+                LayoutProfilesManager.skinArt(
+                    profile: $0, orientation: isPortrait ? .portrait : .landscape,
+                    maxPixel: max(geo.size.width, geo.size.height) * displayScale)
+            }
+            let controlsVisibility = SkinControlsVisibility.resolve(
+                hasArt: skinArt != nil,
+                showButtonOutlines: skinProfile.map {
+                    LayoutProfilesManager.skinSettings(profile: $0).showButtonOutlines
+                } ?? false,
+                editMode: editMode,
+                controlsHidden: controlsHidden)
+
             ZStack {
+                // Profile skin art: over the game view (with a hole at
+                // gameRect), under every control and toolbar.
+                if let skinArt {
+                    SkinOverlay(image: skinArt, gameRect: gameRect)
+                }
+
                 // Debug visualization of the touch-mouse zone: the
                 // exact rect AppWindow routes to the game view. Same
                 // source (engine-published gameRect), so what you see
@@ -128,7 +149,7 @@ struct PlayerView: View {
                         }
                 }
 
-                if !controlsHidden && (controlsVisible || resumeSnapshot == nil) {
+                if controlsVisibility.mounted && (controlsVisible || resumeSnapshot == nil) {
                     PlayerControlsOverlay(
                         layout: layout,
                         actions: actions,
@@ -142,6 +163,7 @@ struct PlayerView: View {
                         draggingDPad: $draggingDPad,
                         draggingButtonID: $draggingButtonID
                     )
+                    .environment(\.controlsDrawingHidden, !controlsVisibility.drawn)
                 }
 
                 if editMode {
