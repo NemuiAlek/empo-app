@@ -63,9 +63,9 @@ public enum SkinFiles {
 
     /// A missing file is the defaults with no findings. Invalid
     /// content is the defaults plus findings, for the caller to log.
-    public static func readSettings(profileFolder: URL) -> (
-        settings: SkinSettings, findings: [String]
-    ) {
+    public static func readSettings(
+        profileFolder: URL
+    ) -> (settings: SkinSettings, findings: [String]) {
         let url = profileFolder.appendingPathComponent(settingsFileName)
         guard let data = try? Data(contentsOf: url) else { return (.defaults, []) }
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
