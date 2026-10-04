@@ -1,24 +1,27 @@
 import ImageIO
 import UIKit
 
-/// Decoded profile skin art, keyed by file URL.
+/// Decoded profile skin art, one image per file.
 ///
 /// Art can be a full-resolution photo, so images decode through
 /// ImageIO's thumbnailer at the size the screen can show, never at
-/// file size. Any profile change empties the cache: art changes are
-/// rare and the next draw reloads only what is on screen.
+/// file size. Each file keeps its largest decode: a smaller request
+/// (a list thumbnail) reuses it, and a larger one (a bigger window)
+/// replaces it, so window resizes never pile up bitmaps. Any profile
+/// change empties the cache: art changes are rare and the next draw
+/// reloads only what is on screen.
 @MainActor
 final class SkinArtCache {
     static let shared = SkinArtCache()
 
-    /// Keyed by size too: a list thumbnail must not hand its tiny
-    /// decode to the full-screen player.
-    private struct Key: Hashable {
-        let url: URL
-        let maxPixel: Int
+    private struct Entry {
+        let image: UIImage
+        /// The size this decode was asked for. A request at or below
+        /// it is served from this entry.
+        let maxPixel: CGFloat
     }
 
-    private var images: [Key: UIImage] = [:]
+    private var entries: [URL: Entry] = [:]
     private var token: NSObjectProtocol?
 
     init() {
@@ -34,8 +37,7 @@ final class SkinArtCache {
 
     /// nil when the file is missing or does not decode as an image.
     func image(at url: URL, maxPixel: CGFloat) -> UIImage? {
-        let key = Key(url: url, maxPixel: Int(maxPixel.rounded()))
-        if let hit = images[key] { return hit }
+        if let hit = entries[url], hit.maxPixel >= maxPixel { return hit.image }
         let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
         guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions) else {
             return nil
@@ -50,13 +52,13 @@ final class SkinArtCache {
         guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions)
         else { return nil }
         let image = UIImage(cgImage: cgImage)
-        images[key] = image
+        entries[url] = Entry(image: image, maxPixel: maxPixel)
         return image
     }
 
     /// Drops every entry. Takes the profile name so callers say what
     /// changed, even though clearing everything is simpler and cheap.
     func invalidate(profile _: String) {
-        images.removeAll()
+        entries.removeAll()
     }
 }

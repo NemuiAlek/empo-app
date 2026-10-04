@@ -72,6 +72,18 @@ final class SkinArtCacheTests: XCTestCase {
         XCTAssertEqual(pixelSize(full).height, 2600)
     }
 
+    /// One decoded image per file: window resizes on iPad must not
+    /// pile up a full-screen bitmap per size.
+    func testSmallerRequestReusesLargerImage() throws {
+        let url = try writePNG(width: 1200, height: 2600, to: "skin-portrait.png")
+        let cache = SkinArtCache()
+
+        _ = cache.image(at: url, maxPixel: 2600)
+        let small = try XCTUnwrap(cache.image(at: url, maxPixel: 1300))
+
+        XCTAssertEqual(pixelSize(small).height, 2600)
+    }
+
     func testUnreadableReturnsNil() throws {
         let url = dir.appendingPathComponent("skin-portrait.jpg")
         try Data("not an image".utf8).write(to: url)

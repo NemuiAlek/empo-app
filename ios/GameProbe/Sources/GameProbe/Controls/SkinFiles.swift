@@ -121,6 +121,26 @@ public enum SkinFiles {
         return destination
     }
 
+    /// Copies the art and `skin.json` (nothing else) into another
+    /// profile folder, for a profile minted from an edit on this one.
+    public static func copySkin(from source: URL, to target: URL) throws {
+        let fm = FileManager.default
+        var names: [String] = []
+        for orientation in [SkinOrientation.portrait, .landscape] {
+            if let url = artLookup(profileFolder: source, orientation: orientation).url {
+                names.append(url.lastPathComponent)
+            }
+        }
+        if fm.fileExists(atPath: source.appendingPathComponent(settingsFileName).path) {
+            names.append(settingsFileName)
+        }
+        for name in names {
+            let destination = target.appendingPathComponent(name)
+            try? fm.removeItem(at: destination)
+            try fm.copyItem(at: source.appendingPathComponent(name), to: destination)
+        }
+    }
+
     public static func removeArt(orientation: SkinOrientation, profileFolder: URL) throws {
         let fm = FileManager.default
         let entries = (try? fm.contentsOfDirectory(atPath: profileFolder.path)) ?? []

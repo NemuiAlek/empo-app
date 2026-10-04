@@ -126,6 +126,32 @@ final class SkinFilesTests: XCTestCase {
         XCTAssertEqual(try names(), ["skin-landscape.jpg"])
     }
 
+    /// A profile minted from an edit on the default profile keeps the
+    /// skin: moving one button must not make the console art vanish.
+    func testCopySkinCarriesArtAndSettingsOnly() throws {
+        try touch("skin-portrait.png", "p")
+        try touch("skin-landscape.jpg", "l")
+        try touch("controls.json", "{}")
+        try SkinFiles.writeSettings(SkinSettings(showButtonOutlines: true), profileFolder: folder)
+        let target = root.appendingPathComponent("Minted")
+        try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+
+        try SkinFiles.copySkin(from: folder, to: target)
+
+        let copied = try FileManager.default.contentsOfDirectory(atPath: target.path).sorted()
+        XCTAssertEqual(copied, ["skin-landscape.jpg", "skin-portrait.png", "skin.json"])
+        XCTAssertTrue(SkinFiles.readSettings(profileFolder: target).settings.showButtonOutlines)
+    }
+
+    func testCopySkinWithoutSkinIsNoOp() throws {
+        let target = root.appendingPathComponent("Minted")
+        try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+
+        try SkinFiles.copySkin(from: folder, to: target)
+
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: target.path), [])
+    }
+
     func testRenameCarriesArt() throws {
         let profilesRoot = root.appendingPathComponent("Profiles")
         let gamesRoot = root.appendingPathComponent("Games")

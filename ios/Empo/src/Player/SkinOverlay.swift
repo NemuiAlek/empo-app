@@ -11,8 +11,9 @@ import SwiftUI
 struct SkinOverlay: View {
     let image: UIImage
     /// In the container's coordinates. The player passes window
-    /// points (the container ignores the safe area, so the spaces
-    /// match). The editor passes canvas points.
+    /// points and places this view with `.ignoresSafeArea()` so the
+    /// spaces match. The editor passes canvas points and keeps the
+    /// canvas frame.
     let gameRect: CGRect
 
     var body: some View {
@@ -32,7 +33,6 @@ struct SkinOverlay: View {
                     .fill(style: FillStyle(eoFill: true))
                 }
         }
-        .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
