@@ -60,6 +60,18 @@ final class SkinArtCacheTests: XCTestCase {
         XCTAssertEqual(pixelSize(try XCTUnwrap(cache.image(at: url, maxPixel: 2000))).height, 400)
     }
 
+    /// A list thumbnail must not leave a tiny image in the cache for
+    /// the full-screen player to pick up.
+    func testThumbnailDoesNotShrinkFullSizeArt() throws {
+        let url = try writePNG(width: 1200, height: 2600, to: "skin-portrait.png")
+        let cache = SkinArtCache()
+
+        _ = cache.image(at: url, maxPixel: 132)
+        let full = try XCTUnwrap(cache.image(at: url, maxPixel: 2600))
+
+        XCTAssertEqual(pixelSize(full).height, 2600)
+    }
+
     func testUnreadableReturnsNil() throws {
         let url = dir.appendingPathComponent("skin-portrait.jpg")
         try Data("not an image".utf8).write(to: url)

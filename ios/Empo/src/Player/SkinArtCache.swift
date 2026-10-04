@@ -11,7 +11,14 @@ import UIKit
 final class SkinArtCache {
     static let shared = SkinArtCache()
 
-    private var images: [URL: UIImage] = [:]
+    /// Keyed by size too: a list thumbnail must not hand its tiny
+    /// decode to the full-screen player.
+    private struct Key: Hashable {
+        let url: URL
+        let maxPixel: Int
+    }
+
+    private var images: [Key: UIImage] = [:]
     private var token: NSObjectProtocol?
 
     init() {
@@ -27,7 +34,8 @@ final class SkinArtCache {
 
     /// nil when the file is missing or does not decode as an image.
     func image(at url: URL, maxPixel: CGFloat) -> UIImage? {
-        if let hit = images[url] { return hit }
+        let key = Key(url: url, maxPixel: Int(maxPixel.rounded()))
+        if let hit = images[key] { return hit }
         let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
         guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions) else {
             return nil
@@ -42,7 +50,7 @@ final class SkinArtCache {
         guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions)
         else { return nil }
         let image = UIImage(cgImage: cgImage)
-        images[url] = image
+        images[key] = image
         return image
     }
 
