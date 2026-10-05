@@ -30,9 +30,13 @@ public enum GameScriptProfile {
         /// Modern grammar tokens count only in code, not in comments,
         /// strings, or heredocs, except inside `#{...}`.
         case codeOnlyTokens = "code-only-tokens"
+        /// A `<<` right after a value, or with no end line after it, is
+        /// a shift, not a heredoc that hides the rest of the scripts
+        /// from the Ruby 1.9 check.
+        case shiftNotHeredoc = "shift-not-heredoc"
     }
 
-    public static let currentSchema: Schema = .codeOnlyTokens
+    public static let currentSchema: Schema = .shiftNotHeredoc
 
     public struct Result {
         public let rubyVersion: Int

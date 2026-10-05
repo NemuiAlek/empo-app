@@ -54,7 +54,7 @@ public enum RubyScriptGrammarSniffer {
     /// forks that ship both. The sniffer then falls back to the
     /// compiled `Scripts.{rxdata,rvdata,rvdata2}` file, unless a
     /// packed script archive makes that file a stale bootstrap.
-    /// It runs the grammar classifier on the joined source.
+    /// It runs the grammar classifier on those scripts.
     static func sniff(gameDirectory: URL) -> Result {
         let fm = FileManager.default
 
@@ -289,8 +289,8 @@ public enum RubyScriptGrammarSniffer {
         // Swift reads "\r\n" as one Character, so a split on "\n" alone
         // keeps a Windows file as one line.
         let scripts = scripts.map { $0.replacingOccurrences(of: "\r\n", with: "\n") }
-        let source = scripts.joined(separator: "\n")
-        let code = codeOnly(source)
+        // Each script ends its own heredocs.
+        let code = scripts.map(codeOnly).joined(separator: "\n")
         var hits = scripts.filter(startsFrozen).count
         let range = NSRange(code.startIndex..., in: code)
         for pattern in modernTokens {
@@ -304,7 +304,7 @@ public enum RubyScriptGrammarSniffer {
             hits += regex.numberOfMatches(in: code, range: range)
         }
         if hits >= modernThreshold { return .modern }
-        return callsRuby19Methods(source) ? .mixed : .legacy
+        return scripts.contains(where: callsRuby19Methods) ? .mixed : .legacy
     }
 
     /// The source with comments and the plain part of string literals
@@ -376,8 +376,9 @@ public enum RubyScriptGrammarSniffer {
     private static let ruby19Guard = try? NSRegularExpression(
         pattern: #"\b(?:if|elsif)\s+\(?\s*(?:(?:([@$]?[\w.]+)\.)?respond_to\?[\s(]*:force_encoding\b|defined\?[\s(]*Encoding\b)(?![^#;]*(?:\|\||\bor\b))"#)
 
+    /// A `<<` right after a value, as in `i<<x` or `(1<<n)`, is a shift.
     private static let heredocStart = try? NSRegularExpression(
-        pattern: #"<<([-~]?)(["'`]?)([A-Za-z_]\w*)\2"#)
+        pattern: #"(?<![\w)\]}"'`])<<([-~]?)(["'`]?)([A-Za-z_]\w*)\2"#)
 
     /// What a guard makes safe: every 1.9 call after `defined?(Encoding)`,
     /// or only `force_encoding` on the receiver that `respond_to?` checked.
@@ -406,7 +407,16 @@ public enum RubyScriptGrammarSniffer {
         var heredocs: [(end: String, indented: Bool, interpolates: Bool)] = []
         var bodyStack = heredocBody
         var blocks: [(indent: Int, cover: Cover)] = []
-        for line in source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+        let lines = source.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        // Ruby needs the end line of a heredoc. With no end line after
+        // it, `value <<token` is a shift.
+        var lastLine: [String: Int] = [:]
+        var lastIndentlessLine: [String: Int] = [:]
+        for (number, line) in lines.enumerated() {
+            lastLine[line] = number
+            lastIndentlessLine[String(withoutIndent(line))] = number
+        }
+        for (number, line) in lines.enumerated() {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             let indent = line.prefix { $0 == " " || $0 == "\t" }.count
             let units = line.utf16.map { Character(Unicode.Scalar($0) ?? "\u{FFFD}") }
@@ -435,7 +445,11 @@ public enum RubyScriptGrammarSniffer {
                 func group(_ number: Int) -> Substring {
                     Range(match.range(at: number), in: line).map { line[$0] } ?? ""
                 }
-                heredocs.append((String(group(3)), !group(1).isEmpty, group(2) != "'"))
+                let end = String(group(3))
+                let indented = !group(1).isEmpty
+                if ((indented ? lastIndentlessLine[end] : lastLine[end]) ?? -1) > number {
+                    heredocs.append((end, indented, group(2) != "'"))
+                }
             }
             func closes(_ text: String) -> Bool {
                 ["end", "else", "elsif"].contains { text.hasPrefix($0) }
@@ -534,6 +548,10 @@ public enum RubyScriptGrammarSniffer {
                 stack.append(.literal(open: nil, close: "`", interpolates: true, depth: 0))
             case "%":
                 if let literal = percentLiteral(chars, at: &index) { stack.append(literal) }
+            case "/":
+                if startsRegex(chars, before: index - 1) {
+                    stack.append(.literal(open: nil, close: "/", interpolates: true, depth: 0))
+                }
             case "#":
                 return mask
             case "{":
@@ -554,6 +572,43 @@ public enum RubyScriptGrammarSniffer {
         }
         mask[chars.count] = isCode()
         return mask
+    }
+
+    /// A `/` opens a regex where a value can start, and divides after a
+    /// value: `gsub!(/<<r>>/, "")` against `width/2`. As in Ruby, a name,
+    /// a space, and a `/` with no space after it is a call with a regex:
+    /// `text.scan /<<tag>>/`. Ruby reads it as division when the name is
+    /// a local variable, so with no closing `/` on the line it divides:
+    /// `width /3`.
+    private static func startsRegex(_ chars: [Character], before slash: Int) -> Bool {
+        var cursor = slash
+        while cursor > 0, chars[cursor - 1] == " " || chars[cursor - 1] == "\t" { cursor -= 1 }
+        let next: Character = slash + 1 < chars.count ? chars[slash + 1] : " "
+        let callArgument = cursor < slash && !next.isWhitespace && next != "="
+            && closesRegex(chars, after: slash)
+        guard cursor > 0 else { return true }
+        let previous = chars[cursor - 1]
+        if "(,=!~|&{[;?:+-*<>^".contains(previous) { return true }
+        guard previous.isLetter || previous == "_" else { return false }
+        var start = cursor - 1
+        while start > 0, chars[start - 1].isLetter || chars[start - 1].isNumber || chars[start - 1] == "_" {
+            start -= 1
+        }
+        let keywords: Set<String> = ["if", "elsif", "unless", "when", "while", "until", "and", "or", "not", "return", "then"]
+        return callArgument || keywords.contains(String(chars[start..<cursor]))
+    }
+
+    private static func closesRegex(_ chars: [Character], after slash: Int) -> Bool {
+        var index = slash + 1
+        while index < chars.count {
+            if chars[index] == "\\" {
+                index += 2
+                continue
+            }
+            if chars[index] == "/" { return true }
+            index += 1
+        }
+        return false
     }
 
     /// Reads a `%q(...)`-style literal start after the `%`. A `%` with
