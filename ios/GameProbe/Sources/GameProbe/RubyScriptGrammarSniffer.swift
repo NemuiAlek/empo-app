@@ -100,7 +100,7 @@ public enum RubyScriptGrammarSniffer {
         "Scripts.rvdata2",
     ]
 
-    private static let looseScriptDirs = [
+    static let looseScriptDirs = [
         "Scripts",
         "Data/Scripts",
     ]
@@ -136,7 +136,7 @@ public enum RubyScriptGrammarSniffer {
     /// thousands of scripts cannot make the sniff slow.
     private static let maxLooseFiles = 200
 
-    private static func locateLooseScripts(
+    static func locateLooseScripts(
         in gameDirectory: URL,
         fm: FileManager
     ) -> [URL] {
@@ -177,7 +177,7 @@ public enum RubyScriptGrammarSniffer {
         for url in urls {
             guard let str = try? Data(contentsOf: url).decodeAsLooseText() else { continue }
             scripts.append(str)
-            total += str.count
+            total += str.utf8.count
             if total > cap { break }
         }
         return scripts
@@ -219,7 +219,7 @@ public enum RubyScriptGrammarSniffer {
                 let source = inflated.decodeAsLooseText()
             {
                 scripts.append(source)
-                total += source.count
+                total += source.utf8.count
                 if total > combinedCap { break }
             }
         }
