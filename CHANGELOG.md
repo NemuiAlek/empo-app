@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.3 - 2026-10-16
+
+### Chores
+
+- Use engine v6 (#198) ([`79d9bd8`](https://github.com/mateo-m/empo-app/commit/79d9bd8956b904506f99dccc053634c2b46c74e3))
+
 ## 0.7.2 - 2026-10-08
 
 ### Bug Fixes
