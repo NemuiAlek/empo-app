@@ -111,6 +111,9 @@ echo "[mkxp-framework] Linking $CORE_VERSION..."
 cp -R "$CORE/assets" "$FW/Assets.bundle"
 cp -R "$CORE/$SDK/ruby-stdlib" "$FW/Ruby"
 
+# The licenses screen reads it (LicenseEntry.inThisBuild).
+cp "$CORE/licenses.json" "$FW/"
+
 # GameImportValidator reads EmpoCoreRGSSVersionMask at import, before
 # any core is open.
 cat >"$FW/Info.plist" <<PLIST

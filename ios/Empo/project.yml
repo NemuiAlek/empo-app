@@ -366,6 +366,12 @@ targets:
           set -e
           VERSION="$(cut -d" " -f1 "${PROJECT_DIR}/../Dependencies/mvmz-core/.fetched-pin")"
           /usr/libexec/PlistBuddy -c "Set :EmpoCoreVersion $VERSION" "${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
+      - name: Copy the MV/MZ license notices
+        # The licenses screen reads them (LicenseEntry.inThisBuild).
+        basedOnDependencyAnalysis: false
+        script: |
+          cp "${PROJECT_DIR}/../Dependencies/mvmz-core/licenses.json" \
+            "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/"
     settings:
       base:
         PRODUCT_NAME: MvmzCore
