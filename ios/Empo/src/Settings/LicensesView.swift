@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Mateo M. Additional terms apply: see ADDITIONAL-TERMS.md.
+
 import SwiftUI
 
 struct LicensesView: View {
@@ -58,6 +61,23 @@ private let licenses: [LicenseEntry] = [
             3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
             THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+            """),
+
+    LicenseEntry(
+        "Empo", license: "GPL-3.0 with additional terms",
+        text: """
+            Empo, Copyright (C) 2026 Mateo M., https://github.com/mateo-m/empo-app
+            mkxp-z-apple-mobile, Copyright (C) 2026 Mateo M., https://github.com/mateo-m/mkxp-z-apple-mobile
+            psdk-apple-mobile, Copyright (C) 2026 Mateo M., https://github.com/mateo-m/psdk-apple-mobile
+            mvmz-apple-mobile, Copyright (C) 2026 Mateo M., https://github.com/mateo-m/mvmz-apple-mobile
+
+            This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3, with the additional terms that section 7 of that license permits.
+
+            This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+            The full license is at https://www.gnu.org/licenses/gpl-3.0.html and in the LICENSE file of the source code. The additional terms are in the ADDITIONAL-TERMS.md file of the source code. In short: keep this notice, do not present this program as the work of another person, and give a modified version its own name and icon.
+
+            The name "Empo", the Empo logo, and the Empo icon are not under the GPL.
             """),
 
     LicenseEntry(

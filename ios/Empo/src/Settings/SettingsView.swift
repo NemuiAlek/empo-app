@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Mateo M. Additional terms apply: see ADDITIONAL-TERMS.md.
+
 import SwiftUI
 
 struct SettingsView: View {
@@ -259,7 +262,8 @@ struct SettingsView: View {
                     // SwiftUI's Text initializer parses markdown in
                     // string literals, so the [Grid] link renders as
                     // tappable with the .tint(.brand) the form uses.
-                    Text("Made with ☕ by [**Grid**](https://x.com/gridplay_)")
+                    Text("Made with ☕ by [**Grid**](https://x.com/gridplay_)\n© 2026 Mateo M.")
+                        .multilineTextAlignment(.center)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
