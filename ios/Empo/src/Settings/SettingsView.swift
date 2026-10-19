@@ -241,7 +241,7 @@ struct SettingsView: View {
                     ) {
                         Label {
                             HStack {
-                                Text("@gridplay_ on X")
+                                Text("Find me on Twitter")
                                 Spacer()
                                 Image(systemName: "arrow.up.forward")
                                     .font(.caption)
@@ -260,9 +260,9 @@ struct SettingsView: View {
 
                 Section {
                     // SwiftUI's Text initializer parses markdown in
-                    // string literals, so the [Grid] link renders as
+                    // string literals, so the [Mateo M.] link renders as
                     // tappable with the .tint(.brand) the form uses.
-                    Text("Made with ☕ by [**Grid**](https://x.com/gridplay_)\n© 2026 Mateo M.")
+                    Text("Made with ☕ by [**Mateo M.**](https://github.com/mateo-m)\n© 2026 Mateo M.")
                         .multilineTextAlignment(.center)
                         .font(.caption)
                         .foregroundStyle(.secondary)

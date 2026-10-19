@@ -58,7 +58,7 @@ struct DisclaimerView: View {
                     .tint(.white)
                 Text("Enjoy!")
                     .padding(.top, Spacing.md)
-                Text("Grid.")
+                Text("Mateo.")
             }
             .font(.body.weight(.medium))
             .fontDesign(.rounded)
