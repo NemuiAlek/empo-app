@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateo M. Additional terms apply: see ADDITIONAL-TERMS.md.
+
 # Print the AltStore update text for one version: the What's new items
 # that ship in it, then one line when its changelog section has bug
 # fixes. AltStore shows this text as plain text, so it has no Markdown.
