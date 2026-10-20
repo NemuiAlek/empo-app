@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.7.4 - 2026-10-20
+
+### Bug Fixes
+
+- List every bundled library under open-source licenses ([`7df1916`](https://github.com/mateo-m/empo-app/commit/7df1916ad2856acad140d613a05ba59f31f6c243))
+- White flashes after the Primal Kyogre fight in Pokémon Re:Union (mateo-m/mkxp-z-apple-mobile#61) ([`68efcd3`](https://github.com/mateo-m/mkxp-z-apple-mobile/commit/68efcd36c2e8fc53386bbcfdd0b65ad0f9149729))
+- Load the m4a sounds of mv games on the simulator (mateo-m/mvmz-apple-mobile#1) ([`c7917c8`](https://github.com/mateo-m/mvmz-apple-mobile/commit/c7917c89adfbb18fd2833fac09b7cd5be7691ad9))
+
+### Chores
+
+- Move to GPLv3 with additional terms for credit and origin ([`9ef0454`](https://github.com/mateo-m/empo-app/commit/9ef0454a91f37d41602f47c72a722768cd1603ce))
+- Add license headers to source files ([`820f2af`](https://github.com/mateo-m/empo-app/commit/820f2af8009f059cde9fe15afaf614faba9623f0))
+- Use mkxp engine v7, PSDK core v2, and MV/MZ core v2 ([`26d157f`](https://github.com/mateo-m/empo-app/commit/26d157f29df805a711cd648564359b2daf071e54))
+- Sign the app as Mateo, not Grid ([`2e9116f`](https://github.com/mateo-m/empo-app/commit/2e9116f81c4b78f7d33f6f2862eaa2119c4706c6))
+
+### Features
+
+- Read the engine license notices from each bundled core ([`bc475e8`](https://github.com/mateo-m/empo-app/commit/bc475e84ce5c0d5c8566a32e212c5b0248a98b2f))
+- Ship licenses.json with the notices of each bundled library ([`6d6c5ba`](https://github.com/mateo-m/mkxp-z-apple-mobile/commit/6d6c5baa5d63f5502e2551768d9693ff571ab055))
+- Ship licenses.json with the notices of each bundled library ([`64f0e22`](https://github.com/mateo-m/mvmz-apple-mobile/commit/64f0e22c65521ae0ac6c6945e2d4fca46096debb))
+- Fade single map tiles for project renaissance (mateo-m/psdk-apple-mobile#2) ([`2555223`](https://github.com/mateo-m/psdk-apple-mobile/commit/25552239c682446ff1b28e353f76cddd1b1b74f3))
+- Ship licenses.json with the notices of each bundled library ([`bd422fc`](https://github.com/mateo-m/psdk-apple-mobile/commit/bd422fc89872b1de88292abff8669e544a76a8c2))
+
 ## 0.7.3 - 2026-10-16
 
 ### Bug Fixes
