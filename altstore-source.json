@@ -23,6 +23,15 @@
       ],
       "versions": [
         {
+          "version": "0.7.4",
+          "buildVersion": "761",
+          "date": "2026-10-20",
+          "localizedDescription": "This update fixes some bugs.",
+          "downloadURL": "https://github.com/mateo-m/empo-app/releases/download/v0.7.4/Empo-0.7.4-unsigned.ipa",
+          "size": 66010733,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.3",
           "buildVersion": "748",
           "date": "2026-10-16",
