@@ -23,6 +23,15 @@
       ],
       "versions": [
         {
+          "version": "0.8.0",
+          "buildVersion": "766",
+          "date": "2026-10-21",
+          "localizedDescription": "New\n• Translate Empo into 9 languages, with a language picker in settings\n• Announce the new languages in What's new\n\nOther changes\n• Give AltStore the release notes as plain text",
+          "downloadURL": "https://github.com/mateo-m/empo-app/releases/download/v0.8.0/Empo-0.8.0-unsigned.ipa",
+          "size": 66260442,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.7.4",
           "buildVersion": "761",
           "date": "2026-10-20",
