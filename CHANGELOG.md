@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.0 - 2026-10-21
+
+### Features
+
+- Translate Empo into 9 languages, with a language picker in settings (#205) ([`6487f62`](https://github.com/mateo-m/empo-app/commit/6487f6223d5361b56026e707fe947ad6c1f4dc53))
+- Announce the new languages in What's new (#206) ([`5b5dedd`](https://github.com/mateo-m/empo-app/commit/5b5dedd0abc5e6137f9b255e53840eff1e2f24b6))
+
+### Release
+
+- Give AltStore the release notes as plain text (#204) ([`f351fd8`](https://github.com/mateo-m/empo-app/commit/f351fd895c89dbefac1dca324ba43005a5344056))
+
 ## 0.7.4 - 2026-10-20
 
 ### Bug Fixes
