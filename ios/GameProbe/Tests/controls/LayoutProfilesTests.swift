@@ -421,6 +421,40 @@ final class LayoutProfilesTests: XCTestCase {
         XCTAssertTrue(renameToShared)
     }
 
+    func testMigrationKeepsSharedProfileNameAfterOneGameLeaves() {
+        // Games A and B shared "Disposition partagée", then A took a
+        // new layout, so only B's record names the profile.
+        XCTAssertTrue(store.createProfile("Disposition partagée", touch: materializedSample()))
+        let record = MigrationRecord(
+            games: [
+                "game-a": MigrationRecord.Entry(hash: "irrelevant", profile: "Game A"),
+                "game-b": MigrationRecord.Entry(hash: "irrelevant", profile: "Disposition partagée"),
+            ],
+            sharedProfiles: ["Disposition partagée"])
+        let action = decide(
+            userTouch: sampleTouch(), record: record, gameID: "game-c", title: "Clone")
+        guard case .pinToExisting(let profile, let renameToShared, _) = action else {
+            return XCTFail("\(action)")
+        }
+        XCTAssertEqual(profile, "Disposition partagée")
+        XCTAssertFalse(renameToShared)
+    }
+
+    func testMigrationRecordReadsOlderSharedProfilesFromTheirNames() {
+        let data = Data(
+            """
+            {"version":1,"games":{"a":{"hash":"x","profile":"Shared layout 2"},"b":{"hash":"y","profile":"Firered"}}}
+            """.utf8)
+        XCTAssertEqual(MigrationRecord.parse(data: data).sharedProfiles, ["Shared layout 2"])
+    }
+
+    func testMigrationRecordKeepsSharedProfilesThroughSave() {
+        let record = MigrationRecord(
+            games: ["a": MigrationRecord.Entry(hash: "x", profile: "Firered")],
+            sharedProfiles: ["Firered"])
+        XCTAssertEqual(MigrationRecord.parse(data: record.serialize()), record)
+    }
+
     func testMigrationMatchesUserProfileWithoutSharedRename() {
         // A hand-made profile with identical content: pin to it, but
         // never rename a profile the user named.
