@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.1 - 2026-10-24
+
+### Bug Fixes
+
+- Stop the launch freeze and the wrong button margins on iPhone Duo (#207) ([`4e6f4a1`](https://github.com/mateo-m/empo-app/commit/4e6f4a1db2b117ee533a1cba3e8bf9996a607770))
+
+### Features
+
+- Announce iPhone Duo support in What's new (#208) ([`10fc6b8`](https://github.com/mateo-m/empo-app/commit/10fc6b8a838030c60cb67041ca9f439fd4f7def0))
+
 ## 0.8.0 - 2026-10-21
 
 ### Features
