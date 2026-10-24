@@ -23,6 +23,15 @@
       ],
       "versions": [
         {
+          "version": "0.8.1",
+          "buildVersion": "770",
+          "date": "2026-10-24",
+          "localizedDescription": "New\n• Announce iPhone Duo support in What's new\n\nFixed\n• Stop the launch freeze and the wrong button margins on iPhone Duo",
+          "downloadURL": "https://github.com/mateo-m/empo-app/releases/download/v0.8.1/Empo-0.8.1-unsigned.ipa",
+          "size": 66261834,
+          "minOSVersion": "26.0"
+        },
+        {
           "version": "0.8.0",
           "buildVersion": "766",
           "date": "2026-10-21",
