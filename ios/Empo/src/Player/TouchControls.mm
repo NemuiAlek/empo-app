@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Mateo M. Additional terms apply: see ADDITIONAL-TERMS.md.
+
 // TouchControls.mm - UIKit touch control helpers that still need UIKit.
 //
 // Contains the invisible keyboard field (for system-keyboard IME).
@@ -21,7 +24,38 @@ static void injectKey(int scancode, BOOL pressed) {
 
 // TCKeyboardField (intercepts backspace)
 
-@implementation TCKeyboardField
+@implementation TCKeyboardField {
+    NSMutableSet<UIPress *> *_hardwarePresses;
+}
+
+- (BOOL)hardwareKeyTyping {
+    for (UIPress *press in _hardwarePresses) {
+        UIKeyboardHIDUsage code = press.key.keyCode;
+        if (code < UIKeyboardHIDUsageKeyboardLeftControl || code > UIKeyboardHIDUsageKeyboardRightGUI)
+            return YES;
+    }
+    return NO;
+}
+
+- (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+    if (!_hardwarePresses)
+        _hardwarePresses = [NSMutableSet set];
+    for (UIPress *press in presses) {
+        if (press.key)
+            [_hardwarePresses addObject:press];
+    }
+    [super pressesBegan:presses withEvent:event];
+}
+
+- (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+    [super pressesEnded:presses withEvent:event];
+    [_hardwarePresses minusSet:presses];
+}
+
+- (void)pressesCancelled:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+    [super pressesCancelled:presses withEvent:event];
+    [_hardwarePresses minusSet:presses];
+}
 
 - (void)deleteBackward {
     injectKey(GAMECORE_SCANCODE_BACKSPACE, YES);

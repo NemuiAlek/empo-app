@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Mateo M. Additional terms apply: see ADDITIONAL-TERMS.md.
+
 import SwiftUI
 
 // 60-30-10 rule:
@@ -127,6 +130,10 @@ extension View {
     /// system color scheme or the backdrop brightness.
     func darkGlass() -> some View {
         environment(\.colorScheme, .dark)
+    }
+
+    func centeredMessageWidth() -> some View {
+        containerRelativeFrame(.horizontal) { width, _ in width * 2 / 3 }
     }
 }
 

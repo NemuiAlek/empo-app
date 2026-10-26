@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Mateo M. Additional terms apply: see ADDITIONAL-TERMS.md.
+
 import SwiftUI
 
 struct SettingsView: View {
@@ -19,6 +22,8 @@ struct SettingsView: View {
                 settingsHeader
 
                 Section {
+                    LanguagePicker()
+
                     SettingsPicker(
                         title: "Theme",
                         selection: $settings.theme,
@@ -81,9 +86,9 @@ struct SettingsView: View {
                     }
 
                     SettingsToggle(
-                        title: "Controller haptics",
+                        title: "On-screen control haptics",
                         isOn: $settings.controllerHaptics,
-                        description: "Vibration feedback on the on-screen game controls while you play."
+                        description: "Feel a gentle tap when you press the on-screen controls while you play."
                     )
                 } header: {
                     Text("Gameplay")
@@ -153,7 +158,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Advanced")
                 } footer: {
-                    Text("These options are for debugging and troubleshooting.")
+                    Text("Use these if a game misbehaves or you want to report a bug.")
                 }
 
                 Section {
@@ -238,7 +243,7 @@ struct SettingsView: View {
                     ) {
                         Label {
                             HStack {
-                                Text("@gridplay_ on X")
+                                Text("Find me on Twitter")
                                 Spacer()
                                 Image(systemName: "arrow.up.forward")
                                     .font(.caption)
@@ -257,9 +262,10 @@ struct SettingsView: View {
 
                 Section {
                     // SwiftUI's Text initializer parses markdown in
-                    // string literals, so the [Grid] link renders as
+                    // string literals, so the [Mateo M.] link renders as
                     // tappable with the .tint(.brand) the form uses.
-                    Text("Made with ☕ by [**Grid**](https://x.com/gridplay_)")
+                    Text("Made with ☕ by [**Mateo M.**](https://github.com/mateo-m)\n© 2026 Mateo M.")
+                        .multilineTextAlignment(.center)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -289,7 +295,7 @@ struct SettingsView: View {
         Button {
             showBuildInfo = true
         } label: {
-            Text("v\(AppInfo.version)")
+            Text(verbatim: "v\(AppInfo.version)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -358,11 +364,9 @@ private enum UpdateStatusChipPhase: Hashable {
         }
     }
 
-    var title: String {
+    var title: LocalizedStringResource {
         switch self {
-        case .hidden:
-            return ""
-        case .checking:
+        case .checking, .hidden:
             return "Checking for updates…"
         case .upToDate:
             return "Up to date"
@@ -615,7 +619,7 @@ private struct BrandGlassModifier: ViewModifier {
 }
 
 struct UpdateStatusBadge: View {
-    let text: String
+    let text: LocalizedStringResource
     let systemImage: String?
     let tint: Color
     let background: Color
@@ -671,7 +675,7 @@ struct UpdateStatusBadge: View {
                 .contentShape(.capsule)
                 .gesture(promoDragGesture(url: actionURL, dismiss: dismissAction))
                 .accessibilityAddTraits(.isButton)
-                .accessibilityHint("Opens the release notes. Swipe down to dismiss.")
+                .accessibilityHint("Opens the release notes.")
         } else {
             content
         }
@@ -871,17 +875,19 @@ private struct BuildInfoSheet: View {
     /// the text-selection range. Users can then long-press to copy only
     /// the canonical value (e.g. the commit hash without the
     /// "(uncommitted changes)" suffix).
-    private struct Row: Identifiable {
-        let label: String
+    private struct Row {
+        let label: LocalizedStringResource
         let value: String
-        var annotation: String?
-        var id: String { label }
+        var annotation: LocalizedStringResource?
     }
 
     private var rows: [Row] {
         var r: [Row] = []
         r.append(Row(label: "Version", value: AppInfo.version))
-        r.append(Row(label: "Build", value: AppInfo.build))
+        r.append(
+            Row(
+                label: LocalizedStringResource(
+                    "Build", comment: "Build info sheet: the app build number row."), value: AppInfo.build))
         r.append(
             Row(
                 label: "Commit",
@@ -901,7 +907,7 @@ private struct BuildInfoSheet: View {
             trailingButton: SheetBarAction("Done") { dismiss() }
         ) {
             SheetCard {
-                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                     if index > 0 {
                         Divider().padding(.leading, Spacing.xl)
                     }

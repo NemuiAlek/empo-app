@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Mateo M. Additional terms apply: see ADDITIONAL-TERMS.md.
+
 import Foundation
 import SwiftUI
 
@@ -68,6 +71,8 @@ protocol GameCore {
 
     /// Rows for the Runtime section of Game Info. Empty hides the section.
     func infoRows(for container: GameContainer) async -> [InfoRow]
+    /// The tool and its edition for one game, such as "RPG Maker VX Ace".
+    func madeWith(at root: URL) -> String
 }
 
 extension GameCore {
@@ -95,9 +100,13 @@ extension GameCore {
     func displayDefaults(for container: GameContainer) -> GameDisplayDefaults { GameDisplayDefaults() }
     func sharedDataFolder(for container: GameContainer) -> [String]? { nil }
     func infoRows(for container: GameContainer) async -> [InfoRow] { [] }
+    func madeWith(at root: URL) -> String { madeWith }
 
     var notInThisBuildMessage: String {
-        "This build of Empo has no \(displayName), so it can't run this game."
+        String(
+            localized: "This build of Empo has no \(displayName), so it can't run this game.",
+            comment: "The placeholder is a game core name, such as PSDK core for Ruby 3.0."
+        )
     }
 
     /// `EngineSessionCoordinator.openCore` opens this path, so a core is
